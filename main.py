@@ -76,9 +76,11 @@ async def handle_rent(
 ):
     records = load_records()
 
-    #避免輸入過長字串存入
-    if len(phone) > 10 or len(email) > 40:
+    #避免輸入過長、過短字串存入
+    if len(phone) > 10 or len(email) > 30:
         return JSONResponse(status_code=400, content={"message": "🚫 資料格式過長！"})
+    elif len(phone) < 9 or len(email) > 20:
+        return JSONResponse(status_code=400, content={"message": "🚫 資料格式過短！"})
 
     #檢查密碼&輸入錯誤需要等15秒
     if password not in CONFIG["ALLOWED_PASSWORDS"]:
@@ -154,4 +156,5 @@ async def handle_return(
     return {
         "status": "success", 
         "message": f"✅ 歸還成功！\n您借用的 {key_id} 時段已登記歸還。"
+
     }
