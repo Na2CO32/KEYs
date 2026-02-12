@@ -76,12 +76,20 @@ async def handle_rent(
 ):
     records = load_records()
 
-    #避免輸入過長、過短字串存入
-    if len(phone) > 10 or len(email) > 30:
-        return JSONResponse(status_code=400, content={"message": "🚫 資料格式過長！"})
-    elif len(phone) < 9 or len(email) > 20:
-        return JSONResponse(status_code=400, content={"message": "🚫 資料格式過短！"})
+    # 驗證電話長度 (必須剛好 10 碼)
+    if len(phone) != 10:
+    return JSONResponse(
+        status_code=400, 
+        content={"message": "🚫 電話格式錯誤！請輸入 10 位數字。"}
+    )
 
+    # 驗證 Email 長度 (防止惡意輸入超長字串，例如超過 50 碼)
+    if len(email) > 30 or len(email) < 15:
+    return JSONResponse(
+        status_code=400, 
+        content={"message": "🚫 Email 格式有誤，請重新輸入。"}
+    )
+    
     #檢查密碼&輸入錯誤需要等15秒
     if password not in CONFIG["ALLOWED_PASSWORDS"]:
         # 使用 asyncio.sleep 讓當前請求等待，但不會卡住其他人的請求
@@ -158,3 +166,4 @@ async def handle_return(
         "message": f"✅ 歸還成功！\n您借用的 {key_id} 時段已登記歸還。"
 
     }
+
