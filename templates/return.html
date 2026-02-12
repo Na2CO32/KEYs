@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歸還鑰匙 - 鑰匙管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-emerald-100">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-extrabold text-gray-800">歸還鑰匙登記</h2>
+        </div>
+
+        <form id="returnForm" class="space-y-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">登記電話</label>
+                <input type="tel" name="phone" placeholder="0912345678" required 
+                       class="block w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-emerald-500 outline-none transition-all">
+            </div>
+        
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">📅 歸還哪一天的預約？</label>
+                <input type="date" name="return_date" id="return_date" required 
+                       class="block w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-emerald-500 outline-none transition-all">
+            </div>
+        
+            </form>
+        
+        <script>
+            // 預設今天日期
+            document.getElementById('return_date').value = new Date().toISOString().split('T')[0];
+        </script>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">歸還鑰匙編號</label>
+                <select name="key_id" required class="block w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-emerald-500 outline-none">
+                    <option value="" disabled selected>-- 請選擇要歸還的鑰匙 --</option>
+                    {% for key in keys %}
+                    <option value="{{ key }}">{{ key }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="w-full bg-emerald-600 text-white py-4 rounded-xl hover:bg-emerald-700 font-bold text-lg shadow-lg mt-8">
+                確認歸還
+            </button>
+            
+            <div class="text-center">
+                <a href="/" class="text-sm font-medium text-emerald-600 hover:underline">← 返回管理首頁</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('returnForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/submit_return', { method: 'POST', body: formData });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '歸還成功',
+                    text: result.message,
+                    confirmButtonColor: '#059669'
+                }).then(() => { window.location.href = '/'; });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: '歸還失敗',
+                    text: result.message,
+                    confirmButtonColor: '#059669'
+                });
+            }
+        };
+    </script>
+</body>
+</html>
