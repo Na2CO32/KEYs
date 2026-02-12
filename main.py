@@ -9,7 +9,8 @@ import asyncio
 
 # ---初始化與配置---
 app = FastAPI(title="鑰匙租借系統")
-templates = Jinja2Templates(directory="templates")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 DATA_FILE = "rentals_db.json"
 
@@ -153,4 +154,5 @@ async def handle_return(
     return {
         "status": "success", 
         "message": f"✅ 歸還成功！\n您借用的 {key_id} 時段已登記歸還。"
+
     }
