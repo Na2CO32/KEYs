@@ -154,5 +154,4 @@ async def handle_return(
     return {
         "status": "success", 
         "message": f"✅ 歸還成功！\n您借用的 {key_id} 時段已登記歸還。"
-
     }
