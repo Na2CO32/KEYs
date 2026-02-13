@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>管理員後台 - 鑰匙租借清單</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">📊 鑰匙租借管理總覽</h1>
+            <a href="/" class="text-blue-600 hover:underline">← 返回首頁</a>
+        </div>
+
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr class="bg-gray-800 text-white">
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">租借人姓名</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">日期 (星期)</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">鑰匙編號</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">租借時段</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">借用人電話</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">狀態操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for item in records %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-5 py-4 text-sm font-medium text-gray-900">{{ item.name }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-700">{{ item.date }}</td>
+                        <td class="px-5 py-4 text-sm font-bold text-blue-600">{{ item.key_id }}</td>
+                        <td class="px-5 py-4 text-sm">
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">{{ item.slots }}</span>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-700">{{ item.phone }}</td>
+                        
+                        <td class="px-5 py-4 text-sm">
+                            <div class="flex items-center space-x-2">
+                                {% if item.status == '審查中' %}
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md text-xs font-bold">待審核</span>
+                                    <button onclick="updateStatus('{{ item.phone }}', '{{ item.key_id }}', '{{ item.date }}', '已借出')" 
+                                            class="p-1 bg-green-500 text-white rounded hover:bg-green-600 shadow-sm transition-transform active:scale-95" title="核准借出">
+                                        ✅ 點我核准
+                                    </button>
+                                {% elif item.status == '待確認歸還' %}
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-bold">收到歸還申請</span>
+                                    <button onclick="updateStatus('{{ item.phone }}', '{{ item.key_id }}', '{{ item.date }}', '已歸還')" 
+                                            class="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 shadow-sm transition-transform active:scale-95" title="確認已收回鑰匙">
+                                        📦 確認收回
+                                    </button>
+                                {% elif item.status == '已借出' %}
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-bold">租借中</span>
+                                    <button onclick="updateStatus('{{ item.phone }}', '{{ item.key_id }}', '{{ item.date }}', '已歸還')" 
+                                            class="p-1 bg-gray-400 text-white rounded hover:bg-gray-500 text-[10px]" title="手動強制歸還">
+                                        強制歸還
+                                    </button>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs">已結案</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    // 修正語法：JavaScript 使用 async function 而非 async def
+    async function updateStatus(phone, keyId, date, target) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pwd = urlParams.get('pwd'); 
+
+        // 基本確認，避免手滑
+        if (!confirm(`確定要將狀態改為「${target}」嗎？`)) return;
+
+        const formData = new FormData();
+        formData.append('phone', phone);
+        formData.append('key_id', keyId);
+        formData.append('date', date);
+        formData.append('target_status', target);
+
+        try {
+            // 注意：API 路徑必須與後端 main.py 定義的一致
+            const response = await fetch(`/admin/update_status?pwd=${pwd}`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            if (response.ok) {
+                location.reload(); 
+            } else {
+                alert("錯誤：" + (result.message || result.detail));
+            }
+        } catch (e) {
+            alert("操作失敗，請檢查伺服器連線或後端 API 是否已新增。");
+        }
+    }
+    </script>
+</body>
+</html>
