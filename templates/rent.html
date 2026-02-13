@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>鑰匙租借系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-96">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">🔑 鑰匙租借申請</h2>
+        
+        <form id="rentForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">電話</label>
+                <input type="tel" name="phone" required class="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" name="email" required class="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">📅 預約日期</label>
+                <input type="date" id="rent_date" name="rent_date" required 
+                       class="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            
+            <script>
+                // 自動預設為今天，並禁止選擇過去的日期
+                const dateInput = document.getElementById('rent_date');
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+                dateInput.min = today;
+            </script>
+
+            <div class="grid grid-cols-1 gap-3">
+                {% for session in sessions %}
+                <label class="relative block">
+                    <input type="checkbox" name="timeslots" value="{{ session.name }}" class="peer sr-only">
+                    <div class="p-4 bg-white border-2 border-gray-100 rounded-xl cursor-pointer transition-all duration-200
+                                peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:shadow-md
+                                hover:border-blue-200 hover:bg-slate-50 active:scale-[0.98]">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-700">{{ session.name }}</span>
+                            <span class="text-sm font-medium text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">{{ session.time }}</span>
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">選擇鑰匙編號</label>
+                <select name="key_id" required class="mt-1 w-full p-2 border-2 border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="" disabled selected>請選擇鑰匙</option>
+                    {% for key in keys %}
+                    <option value="{{ key }}">{{ key }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">4位數密碼</label>
+                <input type="password" name="password" maxlength="4" placeholder="例如: a1b2" required 
+                       class="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-300 font-semibold shadow-md">
+                立即提交申請
+            </button>
+
+            <div class="text-center mt-4">
+                <a href="/" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-all">← 返回首頁</a>
+            </div>
+        </form>
+    </div>
+
+    <div id="ruleModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all">
+            <div class="text-center mb-4">
+                <h3 class="text-2xl font-bold text-slate-800">📜 借用使用規則</h3>
+            </div>
+            
+            <div class="bg-slate-50 p-4 rounded-xl text-sm text-slate-600 space-y-2 mb-4 max-h-60 overflow-y-auto">
+                <p>1. 鑰匙僅限本人使用，不得轉借他人。</p>
+                <p>2. 使用完畢後，請務必於原時段結束前歸還。</p>
+                <p>3. 若遺失鑰匙，需負擔換鎖或配製新鑰匙之費用。</p>
+                <p>4. 嚴禁進入非授權之空間，違者取消借用資格。</p>
+                <p>5. 離開前請確認空間設備已關閉並上鎖。</p>
+            </div>
+
+            <div class="flex items-center space-x-2 mb-6">
+                <input type="checkbox" id="agreeCheck" class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                <label for="agreeCheck" class="text-sm font-medium text-slate-700 cursor-pointer">
+                    我已詳細閱讀並同意遵守上述規則
+                </label>
+            </div>
+
+            <button id="confirmBtn" disabled class="w-full py-3 bg-slate-300 text-white rounded-xl font-bold cursor-not-allowed transition-all">
+                確認並完成預約
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('rentForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            // 顯示驗證中提示
+            Swal.fire({
+                title: '正在驗證中...',
+                text: '請稍候，系統正在安全核對中',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const response = await fetch('/submit_rent', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                Swal.close(); 
+
+                if (result.status === 'success') {
+                    // --- 成功後觸發規則彈窗 ---
+                    const modal = document.getElementById('ruleModal');
+                    const checkbox = document.getElementById('agreeCheck');
+                    const confirmBtn = document.getElementById('confirmBtn');
+
+                    modal.classList.remove('hidden'); // 顯示彈窗
+
+                    // 監聽勾選狀態切換按鈕顏色與功能
+                    checkbox.onchange = function() {
+                        if (this.checked) {
+                            confirmBtn.disabled = false;
+                            confirmBtn.classList.replace('bg-slate-300', 'bg-blue-600');
+                            confirmBtn.classList.remove('cursor-not-allowed');
+                        } else {
+                            confirmBtn.disabled = true;
+                            confirmBtn.classList.replace('bg-blue-600', 'bg-slate-300');
+                            confirmBtn.classList.add('cursor-not-allowed');
+                        }
+                    };
+
+                    // 按下確認後才回首頁
+                    confirmBtn.onclick = function() {
+                        window.location.href = '/';
+                    };
+                    
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '預約失敗',
+                        text: result.message,
+                        confirmButtonColor: '#2563eb'
+                    });
+                }
+            } catch (error) {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: '網路錯誤', 
+                    text: '無法連線到伺服器。' 
+                });
+            }
+        };
+    </script>
+</body>
+</html>
