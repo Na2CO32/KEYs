@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>管理員後台 - 鑰匙租借清單</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">📊 鑰匙租借管理總覽</h1>
+            <a href="/" class="text-blue-600 hover:underline">← 返回首頁</a>
+        </div>
+
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr class="bg-gray-800 text-white">
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">租借人姓名</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">日期 (星期)</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">鑰匙編號</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">租借時段</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">借用人電話</th>
+                        <th class="px-5 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider">狀態操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for item in records %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-5 py-4 text-sm font-medium text-gray-900">{{ item.name }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-700">{{ item.date }}</td>
+                        <td class="px-5 py-4 text-sm font-bold text-blue-600">{{ item.key_id }}</td>
+                        <td class="px-5 py-4 text-sm">
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">{{ item.slots }}</span>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-700">{{ item.phone }}</td>
+                        
+                        <td class="px-5 py-4 text-sm">
+                            <div class="flex items-center space-x-2">
+                                {% if item.status == '審查中' %}
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md text-xs font-bold">待審核</span>
+                                    <button onclick="updateStatus('{{ item.phone }}', '{{ item.key_id }}', '{{ item.date }}', '已借出')" 
+                                            class="p-1 bg-green-500 text-white rounded hover:bg-green-600 shadow-sm transition-transform active:scale-95" title="核准借出">
+                                        ✅ 核准借出
+                                    </button>
+                                {% elif item.status == '待確認歸還' %}
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-bold">收到歸還申請</span>
+                                    <button onclick="updateStatus('{{ item.phone }}', '{{ item.key_id }}', '{{ item.date }}', '已歸還')" 
+                                            class="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 shadow-sm transition-transform active:scale-95" title="確認已收回鑰匙">
+                                        📦 確認收回
+                                    </button>
+                                {% elif item.status == '已借出' %}
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-bold">租借中</span>
+                                {% elif item.status == '已歸還' %}
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs">已結案</span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs">{{ item.status }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden mb-8 p-6 border-l-4 border-blue-500">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                🛠️ 系統鑰匙庫管理
+            </h2>
+            <p class="text-sm text-gray-500 mb-4">修改後點擊「儲存設定」，前端預約頁面的選單將同步更新。</p>
+            
+            <div id="keys-container" class="space-y-2 mb-4">
+                {% for key in keys %}
+                <div class="flex items-center space-x-2 key-row">
+                    <input type="text" value="{{ key }}" class="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <button onclick="removeKeyRow(this)" class="text-red-500 hover:text-red-700 p-2">✕</button>
+                </div>
+                {% endfor %}
+            </div>
+        
+            <div class="flex justify-between items-center border-t pt-4">
+                <button onclick="addKeyRow()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+                    + 新增鑰匙項目
+                </button>
+                <button onclick="saveKeysConfig()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition-all active:scale-95">
+                    💾 儲存設定
+                </button>
+            </div>
+        </div>
+        
+        <script>
+        // 新增一行輸入框
+        function addKeyRow() {
+            const container = document.getElementById('keys-container');
+            const div = document.createElement('div');
+            div.className = 'flex items-center space-x-2 key-row';
+            div.innerHTML = `
+                <input type="text" placeholder="例如: K008 (儲藏室)" class="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                <button onclick="removeKeyRow(this)" class="text-red-500 hover:text-red-700 p-2">✕</button>
+            `;
+            container.appendChild(div);
+        }
+        
+        // 移除該行
+        function removeKeyRow(btn) {
+            btn.parentElement.remove();
+        }
+        
+        // 儲存到後端
+        async function saveKeysConfig() {
+            const inputs = document.querySelectorAll('#keys-container input');
+            const keys = Array.from(inputs).map(i => i.value);
+            const pwd = new URLSearchParams(window.location.search).get('pwd');
+        
+            Swal.fire({ title: '儲存中...', didOpen: () => Swal.showLoading() });
+        
+            const formData = new FormData();
+            keys.forEach(k => formData.append('keys', k));
+        
+            try {
+                const response = await fetch(`/admin/update_keys?pwd=${pwd}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    await Swal.fire({ icon: 'success', title: '儲存成功！', text: '預約選單已更新', timer: 1500 });
+                    location.reload();
+                } else {
+                    Swal.fire({ icon: 'error', title: '儲存失敗' });
+                }
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: '連線錯誤' });
+            }
+        }
+        </script>
+
+    </div>
+
+    <script>
+    async function updateStatus(phone, keyId, date, target) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pwd = urlParams.get('pwd'); 
+
+        // 1. 使用 SweetAlert2 確認彈窗
+        const confirmResult = await Swal.fire({
+            title: '確認操作',
+            text: `確定要將此紀錄狀態改為「${target}」嗎？`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: target === '已借出' ? '#10b981' : '#3b82f6',
+            cancelButtonColor: '#6e7881',
+            confirmButtonText: '確定',
+            cancelButtonText: '取消',
+            reverseButtons: true
+        });
+
+        if (!confirmResult.isConfirmed) return;
+
+        // 2. 顯示處理中動畫
+        Swal.fire({
+            title: '處理中...',
+            text: '正在更新資料庫',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        const formData = new FormData();
+        formData.append('phone', phone);
+        formData.append('key_id', keyId);
+        formData.append('date', date);
+        formData.append('target_status', target);
+
+        try {
+            const response = await fetch(`/admin/update_status?pwd=${pwd}`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // 3. 成功彈窗
+                await Swal.fire({
+                    icon: 'success',
+                    title: '更新成功',
+                    text: `該筆紀錄已變更為 ${target}`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                location.reload(); 
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: '更新失敗',
+                    text: result.message || result.detail
+                });
+            }
+        } catch (e) {
+            Swal.fire({
+                icon: 'error',
+                title: '網路錯誤',
+                text: '無法連線到伺服器。'
+            });
+        }
+    }
+    </script>
+</body>
+</html>
