@@ -203,7 +203,10 @@ async def update_status(
     return JSONResponse(status_code=404, content={"message": "找不到紀錄"})
 
 @app.post("/admin/update_keys")
-async def update_keys(keys: List[str] = Form(...), _=Depends(verify_admin)):
+async def update_keys(
+    keys: List[str] = Form(...), 
+    _=Depends(verify_admin)  # 👈 這是關鍵！強制檢查 Cookie 門禁
+):
     cleaned_keys = [k.strip() for k in keys if k.strip()]
     save_keys(cleaned_keys)
     return {"status": "success"}
