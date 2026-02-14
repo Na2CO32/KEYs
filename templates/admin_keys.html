@@ -51,18 +51,35 @@
         }
 
         document.getElementById('keysForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const { value: pwd } = await Swal.fire({ title: '請輸入管理員密碼', input: 'password' });
-            if (!pwd) return;
+    e.preventDefault();
 
-            const formData = new FormData(e.target);
-            const res = await fetch(`/admin/update_keys?pwd=${pwd}`, { method: 'POST', body: formData });
-            if (res.ok) {
-                Swal.fire('更新成功', '鑰匙清單已更新', 'success');
-            } else {
-                Swal.fire('錯誤', '權限驗證失敗', 'error');
-            }
-        };
+    // 1. 不需要再跳出視窗問密碼了，因為管理員應該已經登入
+    const formData = new FormData(e.target);
+
+    // 顯示處理中
+    Swal.fire({ title: '儲存中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        // 2. 直接發送請求，瀏覽器會自動帶上 admin_session Cookie
+        const res = await fetch(`/admin/update_keys`, { 
+            method: 'POST', 
+            body: formData 
+        });
+
+        if (res.ok) {
+            Swal.fire({ icon: 'success', title: '設定已更新', timer: 1000, showConfirmButton: false })
+                .then(() => location.reload());
+        } else if (res.status === 401) {
+            // 3. 如果 Cookie 失效或沒登入，會被後端擋下來
+            Swal.fire('權限不足', '您的管理員會話已過期，請重新登入', 'error')
+                .then(() => location.href = '/admin/login');
+        } else {
+            Swal.fire('錯誤', '更新失敗', 'error');
+        }
+    } catch (e) {
+        Swal.fire('網路錯誤', '無法連線', 'error');
+    }
+};
     </script>
 </body>
 </html>
