@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>管理員 - 鑰匙庫設定</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 p-6">
+    <div class="max-w-2xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">🔑 鑰匙庫管理</h1>
+            <a href="/admin/records" class="text-blue-600 hover:underline">← 返回紀錄審核</a>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <p class="text-sm text-slate-400 mb-6">您可以在此新增或刪除系統中可供租借的鑰匙名稱。</p>
+            
+            <form id="keysForm" class="space-y-4">
+                <div id="keyInputs" class="space-y-3">
+                    {% for key in keys %}
+                    <div class="flex items-center gap-3">
+                        <input type="text" name="keys" value="{{ key }}" required
+                               class="flex-1 p-3 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none">
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 font-bold">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button type="button" onclick="addKeyField()" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition">
+                    + 新增鑰匙欄位
+                </button>
+
+                <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all mt-6">
+                    儲存所有變更
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function addKeyField() {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-3';
+            div.innerHTML = `
+                <input type="text" name="keys" placeholder="例如：K004 (實驗室)" required
+                       class="flex-1 p-3 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 font-bold">✕</button>
+            `;
+            document.getElementById('keyInputs').appendChild(div);
+        }
+
+        document.getElementById('keysForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const { value: pwd } = await Swal.fire({ title: '請輸入管理員密碼', input: 'password' });
+            if (!pwd) return;
+
+            const formData = new FormData(e.target);
+            const res = await fetch(`/admin/update_keys?pwd=${pwd}`, { method: 'POST', body: formData });
+            if (res.ok) {
+                Swal.fire('更新成功', '鑰匙清單已更新', 'success');
+            } else {
+                Swal.fire('錯誤', '權限驗證失敗', 'error');
+            }
+        };
+    </script>
+</body>
+</html>
