@@ -89,7 +89,7 @@ async def login_page(request: Request):
 async def handle_login(password: str = Form(...)):
     if password in CONFIG["ALLOWED_PASSWORDS"]:
         response = JSONResponse(content={"status": "success"})
-        response.set_cookie(key="user_session", value="authenticated", max_age=86400)
+        response.set_cookie(key="user_session", value="authenticated", max_age=900)
         return response
     return JSONResponse(status_code=401, content={"message": "❌ 密碼錯誤"})
 
@@ -101,7 +101,7 @@ async def admin_login_page(request: Request):
 async def handle_admin_login(password: str = Form(...)):
     if password == CONFIG["ADMIN_PWD"]:
         response = JSONResponse(content={"status": "success"})
-        response.set_cookie(key="admin_session", value="admin_authenticated", max_age=3600)
+        response.set_cookie(key="admin_session", value="admin_authenticated", max_age=900)
         return response
     return JSONResponse(status_code=401, content={"message": "❌ 管理員密碼錯誤"})
 
@@ -237,4 +237,5 @@ async def update_keys(
 ):
     cleaned_keys = [k.strip() for k in keys if k.strip()]
     save_keys(cleaned_keys)
+
     return {"status": "success"}
