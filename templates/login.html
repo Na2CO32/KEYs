@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>系統登入 - 鑰匙管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-80 text-center">
+        <div class="text-4xl mb-4">🔐</div>
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">請輸入授權碼</h2>
+        
+        <form id="loginForm" class="space-y-4">
+            <input type="password" name="password" placeholder="4位數授權碼" required 
+                   class="w-full p-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none text-center text-lg tracking-widest">
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all">
+                確認登入
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const response = await fetch('/login', { method: 'POST', body: formData });
+            if (response.ok) {
+                Swal.fire({ icon: 'success', title: '登入成功', showConfirmButton: false, timer: 1000 })
+                    .then(() => location.href = '/');
+            } else {
+                Swal.fire({ icon: 'error', title: '驗證失敗', text: '密碼不正確' });
+            }
+        };
+    </script>
+</body>
+</html>
