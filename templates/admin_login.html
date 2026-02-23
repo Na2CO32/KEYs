@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>管理員登入 - 鑰匙管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-80 text-center">
+        <div class="text-4xl mb-4">🛡️</div>
+        <h2 class="text-2xl font-bold mb-2 text-gray-800">管理員登入</h2>
+        <p class="text-sm text-gray-400 mb-6">請輸入管理授權碼</p>
+        
+        <form id="adminLoginForm" class="space-y-4">
+            <input type="password" name="password" placeholder="管理員密碼" required 
+                   class="w-full p-3 border-2 border-gray-100 rounded-xl focus:border-indigo-500 outline-none text-center text-lg tracking-widest">
+            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                驗證並進入後台
+            </button>
+        </form>
+        <a href="/" class="block mt-6 text-xs text-gray-400 hover:text-gray-600">返回系統首頁</a>
+    </div>
+
+    <script>
+        document.getElementById('adminLoginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const response = await fetch('/admin/login', { method: 'POST', body: formData });
+            if (response.ok) {
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: '管理員驗證成功', 
+                    showConfirmButton: false, 
+                    timer: 1000 
+                }).then(() => location.href = '/admin/records');
+            } else {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: '驗證失敗', 
+                    text: '管理員密碼錯誤' 
+                });
+            }
+        };
+    </script>
+</body>
+</html>
