@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>管理員 - 鑰匙庫設定</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 p-6">
+    <div class="max-w-2xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">🔑 鑰匙庫管理</h1>
+            <a href="/admin/records" class="text-blue-600 hover:underline">← 返回紀錄審核</a>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <p class="text-sm text-slate-400 mb-6">您可以在此新增鑰匙與圖片連結，圖片將顯示於使用者租借介面。</p>
+            
+            <form id="keysForm" class="space-y-4">
+                <div id="keyInputs" class="space-y-3">
+                    {% for key in keys %}
+                    <div class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl bg-slate-50 relative">
+                        <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-600">✕</button>
+                        
+                        <label class="text-xs font-bold text-slate-500">鑰匙名稱</label>
+                        <input type="text" name="keys" value="{{ key.name }}" placeholder="例如:K001 (大門)" required
+                            class="p-2 border rounded-lg focus:border-blue-500 outline-none">
+                        
+                        <label class="text-xs font-bold text-slate-500">圖片連結 (URL)</label>
+                        <input type="text" name="key_imgs" value="{{ key.img }}" placeholder="https://..."
+                            class="p-2 border rounded-lg focus:border-blue-500 outline-none text-sm">
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button type="button" onclick="addKeyField()" class="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition">
+                    + 新增鑰匙欄位
+                </button>
+
+                <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all mt-6">
+                    儲存所有變更
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function addKeyField() {
+            const div = document.createElement('div');
+            div.className = 'flex flex-col gap-2 p-4 border border-slate-200 rounded-xl bg-slate-50 relative';
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-600">✕</button>
+                <label class="text-xs font-bold text-slate-500">鑰匙名稱</label>
+                <input type="text" name="keys" placeholder="例如:K001 (大門)" required class="p-2 border rounded-lg outline-none focus:border-blue-500">
+                <label class="text-xs font-bold text-slate-500">圖片連結 (URL)</label>
+                <input type="text" name="key_imgs" placeholder="https://..." class="p-2 border rounded-lg text-sm outline-none focus:border-blue-500">
+            `;
+            document.getElementById('keyInputs').appendChild(div);
+        }
+
+        document.getElementById('keysForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            Swal.fire({ title: '儲存中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                const res = await fetch(`/admin/update_keys`, { 
+                    method: 'POST', 
+                    body: formData 
+                });
+
+                if (res.ok) {
+                    Swal.fire({ icon: 'success', title: '設定已更新', timer: 1000, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else if (res.status === 401) {
+                    Swal.fire('權限不足', '請重新登入管理員', 'error')
+                        .then(() => location.href = '/admin/login');
+                } else {
+                    Swal.fire('錯誤', '更新失敗', 'error');
+                }
+            } catch (e) {
+                Swal.fire('網路錯誤', '無法連線', 'error');
+            }
+        };
+    </script>
+</body>
+</html>
