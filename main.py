@@ -120,9 +120,8 @@ async def logout():
     return response
 
 # --- 路由：使用者介面 ---
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def read_root(request: Request):
-    # 使用 templates.TemplateResponse 來渲染你的 index.html
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/rent", response_class=HTMLResponse)
@@ -246,3 +245,4 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         return RedirectResponse(url="/admin/login" if "/admin" in request.url.path else "/login")
 
     return JSONResponse(status_code=exc.status_code, content={"message": str(exc.detail)})
+
